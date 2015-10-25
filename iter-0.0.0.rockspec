@@ -1,5 +1,5 @@
 package = "iter"
-version = "scm-1"
+version = "0.0.0"
 source = {
   url = "git://github.com/gordonbrander/iter"
 }
