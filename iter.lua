@@ -6,19 +6,8 @@ Can transform any stateful iterator function.
 
 local exports = {}
 
--- Iterate over the values of a table.
--- Returns a stateful iterator function.
-local function values(t)
-  local i = 0
-  return function()
-    i = i + 1
-    return t[i]
-  end
-end
-exports.values = values
-
 -- Capture the state of a stateless iterator and return a stateful iterator
--- for the same values.
+-- of values.
 local function stateful(next, state, at)
   local v
   return function()
@@ -27,6 +16,13 @@ local function stateful(next, state, at)
   end
 end
 exports.stateful = stateful
+
+-- Iterate over the values of a table.
+-- Returns a stateful iterator function.
+local function values(t)
+  return stateful(ipairs(t))
+end
+exports.values = values
 
 -- Filter a stateful `next` iterator function, returning a new `next` function
 -- for the items that pass `predicate` function.
