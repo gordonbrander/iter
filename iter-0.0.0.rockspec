@@ -4,7 +4,7 @@ source = {
   url = "git://github.com/gordonbrander/iter"
 }
 description = {
-  summary = "Map, filter and transform lazy iterators",
+  summary = "Map, filter and transform iterator functions",
   detailed = [[
   iter offers the familiar `map()`, `filter()`, etc but with a twist: rather than transforming tables, iter transforms the values in iterators. Transformations are lazy and no work is done until iterator is consumed (usually with a `for` loop).
   ]],
