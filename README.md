@@ -14,7 +14,7 @@ local filter = iter.filter
 local values = iter.values
 
 -- Import an enormous table
-local large_table = require('largetable.lua')
+local very_large_table = require('verylargetable.lua')
 
 -- Create an iterator function for table values
 local v = values(very_large_table)
