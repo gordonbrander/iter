@@ -1,5 +1,5 @@
 package = "iter"
-version = "0.0.0"
+version = "0.0-0"
 source = {
   url = "git://github.com/gordonbrander/iter"
 }
