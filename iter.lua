@@ -105,7 +105,7 @@ exports.is_nil = is_nil
 local function filter_map(a2b, next)
   return filter(is_nil, map(a2b, next))
 end
-exports.filter_map
+exports.filter_map = filter_map
 
 -- Lift a function to become a filter_map iterator transformer.
 -- This can be used in a similar way to Python's generator expressions.
