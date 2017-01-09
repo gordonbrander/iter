@@ -9,9 +9,9 @@ local exports = {}
 -- Capture the state of a stateless iterator and return a stateful iterator
 -- of values.
 local function iter_values(next, state, i)
-  local v
+  local i, v = i
   return function()
-    k, v = next(state, i)
+    i, v = next(state, i)
     return v
   end
 end
@@ -103,7 +103,14 @@ exports.is_nil = is_nil
 
 -- Map all values with a2b. If mapped value is nil, filter value.
 local function filter_map(a2b, next)
-  return filter(is_nil, map(a2b, next))
+  return function()
+    for v in next do
+      local xv = a2b(v)
+      if xv ~= nil then
+        return xv
+      end
+    end
+  end
 end
 exports.filter_map = filter_map
 
