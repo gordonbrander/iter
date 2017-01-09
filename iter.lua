@@ -1,8 +1,8 @@
---[[
-Transform iterator functions using familiar `map`, `filter`, `reduce`, etc.
-
-Can transform any stateful iterator function.
-]]--
+-- # iter.lua
+--
+-- Transform iterator functions using familiar `map`, `filter`, `reduce`, etc.
+-- Transformations are lazy and are only performed item-by-item when the final
+-- iterator is consumed.
 
 local exports = {}
 
@@ -87,6 +87,9 @@ local function remove(predicate, next)
 end
 exports.remove = remove
 
+-- Map each item with function `a2b`, returning a new iterator of mapped values.
+-- Note that because Lua iterators terminate on `nil`, you can stop iteration
+-- early by returning `nil` from `a2b`.
 local function map(a2b, next)
   return function()
     for v in next do
@@ -115,7 +118,11 @@ end
 exports.filter_map = filter_map
 
 -- Lift a function to become a filter_map iterator transformer.
--- This can be used in a similar way to Python's generator expressions.
+-- This function serves a similar purpose to Python's list comprehensions
+-- and generator expressions. It lets you write your functions for single
+-- values, then lift them to deal with any iterator sequence, returning a new
+-- iterator sequence. Like Python's list comprehensions, you can both map
+-- and filter the values (to filter, simply return `nil`).
 local function lift(a2b)
   return function(next)
     return filter_map(a2b, next)
@@ -135,11 +142,30 @@ exports.reductions = reductions
 
 local function take(n, next)
   return function()
-    n = n - 1
-    if n > 0 then return next() end
+    for v in next do
+      n = n - 1
+      if n > 0 then
+        return v
+      else
+        return nil
+      end
+    end
   end
 end
 exports.take = take
+
+local function take_while(predicate, next)
+  return function()
+    for v in next do
+      if predicate(v) then
+        return a2b(v)
+      else
+        return nil
+      end
+    end
+  end
+end
+exports.map = map
 
 local function skip(n, next)
   return function()
@@ -150,6 +176,19 @@ local function skip(n, next)
   end
 end
 exports.skip = skip
+
+local function skip_while(predicate, next)
+  local skipping = true
+  return function()
+    for v in next do
+      if skipping then
+        skipping = predicate(v)
+      else
+        return v
+      end
+    end
+  end
+end
 
 local function value(x, y)
   if x and y then return y else return x end
