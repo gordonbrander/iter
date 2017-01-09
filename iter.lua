@@ -8,21 +8,62 @@ local exports = {}
 
 -- Capture the state of a stateless iterator and return a stateful iterator
 -- of values.
-local function stateful(next, state, at)
+local function iter_values(next, state, i)
   local v
   return function()
-    at, v = next(state, at)
+    k, v = next(state, i)
     return v
   end
 end
-exports.stateful = stateful
+exports.iter_values = iter_values
 
--- Iterate over the values of a table.
+-- Iterate over the indexed values of a table.
 -- Returns a stateful iterator function.
+local function ivalues(t)
+  return iter_values(ipairs(t))
+end
+exports.ivalues = ivalues
+
+-- Iterate over the keyed values of a table
 local function values(t)
-  return stateful(ipairs(t))
+  return iter_values(pairs(t))
 end
 exports.values = values
+
+-- Create a stateful iterator of `{k, v}` pairs from a table.
+local function items(t)
+  local v
+  local next, state, k = pairs(t)
+  return function()
+    k, v = next(state, k)
+    return {k, v}
+  end
+end
+exports.items = items
+
+-- from the end backwards
+
+local function prev(t, i)
+  i = i - 1
+  local v = t[i]
+  if v then
+    return i, v
+  end
+end
+exports.prev = prev
+
+-- Iterate over ipairs in reverse
+-- Note this is a STATELESS iterator. Use rev_values if you want to iterate
+-- over only values in reverse.
+local function rev_ipairs(t)
+  return prev, t, #t + 1
+end
+exports.rev_ipairs = rev_ipairs
+
+local function rev_values(t)
+  return iter_values(rev_ipairs(t))
+end
+exports.rev_values = rev_values
 
 -- Filter a stateful `next` iterator function, returning a new `next` function
 -- for the items that pass `predicate` function.
@@ -121,11 +162,45 @@ local function append(t, v)
   return t
 end
 
+-- Insert values from iterator into table `t`.
+-- Mutates and returns `t`.
+local function extend(t, next, ...)
+  return reduce(append, t, next, ...)
+end
+
 -- Collect an iterator's values into a table.
 local function collect(next, ...)
-  return reduce(append, {}, next, ...)
+  return extend({}, next, ...)
 end
 exports.collect = collect
+
+local function compare_min(x, y)
+  if x and x < y then
+    return x
+  else
+    return y
+  end
+end
+
+-- Get the smallest item in the iterator
+local function min(next, ...)
+  return reduce(compare_min, nil, next, ...)
+end
+exports.min = min
+
+local function compare_max(x, y)
+  if x and x > y then
+    return x
+  else
+    return y
+  end
+end
+
+-- Get the largest item in the iterator
+local function max(next, ...)
+  return reduce(compare_max, nil, next, ...)
+end
+exports.max = max
 
 -- Partition an iterator into "chunks", returning an iterator of tables
 -- containing `chunk_size` items each.
@@ -150,5 +225,57 @@ local function partition(chunk_size, next)
   end
 end
 exports.partition = partition
+
+-- Zip 2 iterators using function f
+-- Terminates on shortest iterator.
+local function zip_with(f, next_a, next_b)
+  return function()
+    a = next_a()
+    b = next_b()
+    if a ~= nil and b ~= nil then
+      return f(a, b)
+    end
+  end
+end
+exports.zip_with = zip_with
+
+local function table2(a, b)
+  return {a, b}
+end
+
+-- Zip 2 iterators into an iterator of tables made up of paired values.
+local function zip(next_a, next_b)
+  return zip_with(table2, next_a, next_b)
+end
+exports.zip = zip
+
+-- Remove adjacent duplicates from iterator.
+local function dedupe(next)
+  local prev = dedupe
+  return function()
+    for curr in next do
+      if curr ~= prev then
+        prev = curr
+        return curr
+      end
+    end
+  end
+end
+exports.dedupe = dedupe
+
+-- Remove adjacent duplicates from iterator by calculating value with
+-- readkey function.
+local function dedupe_with(readkey, next)
+  local prev = dedupe
+  return function()
+    for curr in next do
+      if readkey(curr) ~= readkey(prev) then
+        prev = curr
+        return curr
+      end
+    end
+  end
+end
+exports.dedupe_with = dedupe_with
 
 return exports
