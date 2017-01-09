@@ -8,7 +8,7 @@ Expected: %s
 Got: %s]]
 
 local function test(x, y, msg)
-  assert(x == y, string.format(MSG_TEMPLATE, msg or "", x, y))
+  assert(x == y, string.format(MSG_TEMPLATE, msg or "", y, x))
   print(msg)
 end
 
@@ -79,4 +79,18 @@ do
   local y = {}
   iter.extend(y, x)
   test(#y, 10, "extend() appends indexed values to table, mutating it")
+end
+
+do
+  local min = iter.min(iter.values(ten))
+  local nil_min = iter.min(iter.values({}))
+  test(min, 1, "min() finds the lowest value in the iterator")
+  test(nil_min, nil, "min() returns nil if iterator is empty")
+end
+
+do
+  local max = iter.max(iter.values(ten))
+  local nil_max = iter.max(iter.values({}))
+  test(max, 10, "max() finds the highest value in the iterator")
+  test(nil_max, nil, "max() returns nil if iterator is empty")
 end
