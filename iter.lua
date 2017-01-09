@@ -46,19 +46,34 @@ local function remove(predicate, next)
 end
 exports.remove = remove
 
--- Map a non-nil value through function `a2b`.
--- Returns value or nil.
-local function map_value(a2b, v)
-  if v then return a2b(v) end
-end
-exports.map_value = map_value
-
 local function map(a2b, next)
   return function()
-    return map_value(a2b, next())
+    for v in next do
+      return a2b(v)
+    end
   end
 end
 exports.map = map
+
+local function is_nil(x)
+  return x ~= nil
+end
+exports.is_nil = is_nil
+
+-- Map all values with a2b. If mapped value is nil, filter value.
+local function filter_map(a2b, next)
+  return filter(is_nil, map(a2b, next))
+end
+exports.filter_map
+
+-- Lift a function to become a filter_map iterator transformer.
+-- This can be used in a similar way to Python's generator expressions.
+local function lift(a2b)
+  return function(next)
+    return filter_map(a2b, next)
+  end
+end
+exports.lift = lift
 
 local function reductions(step, result, next)
   return function()
