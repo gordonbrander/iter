@@ -215,6 +215,7 @@ end
 local function extend(t, next, ...)
   return reduce(append, t, next, ...)
 end
+exports.extend = extend
 
 -- Collect an iterator's values into a table.
 local function collect(next, ...)

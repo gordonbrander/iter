@@ -73,3 +73,10 @@ do
   local t = iter.collect(y)
   test(#t, 7, "skip() skips corrrect number of values")
 end
+
+do
+  local x = iter.values(ten)
+  local y = {}
+  iter.extend(y, x)
+  test(#y, 10, "extend() appends indexed values to table, mutating it")
+end
