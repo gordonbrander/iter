@@ -39,10 +39,11 @@ do
   local x = iter.values(ten)
   x = iter.filter_map(function (y)
     if y % 2 > 0 then
-      return "Testing" .. y
+      return "mapped_" .. y
     end
   end, x)
   local t = iter.collect(x)
+  test(t[1], "mapped_1", "filter_map maps values")
   test(#t, 5, "filter_map filters out nil values")
 end
 
