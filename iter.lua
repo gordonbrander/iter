@@ -144,7 +144,7 @@ local function take(n, next)
   return function()
     for v in next do
       n = n - 1
-      if n > 0 then
+      if n >= 0 then
         return v
       else
         return nil
@@ -171,7 +171,9 @@ local function skip(n, next)
   return function()
     for v in next do
       n = n - 1
-      if n < 1 then return v end
+      if n < 0 then
+        return v
+      end
     end
   end
 end
