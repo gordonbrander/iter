@@ -18,19 +18,21 @@ end
 exports.iter_values = iter_values
 
 -- Iterate over the indexed values of a table.
--- Returns a stateful iterator function.
+-- Returns a stateful iterator function that returns one values.
 local function ivalues(t)
   return iter_values(ipairs(t))
 end
 exports.ivalues = ivalues
 
--- Iterate over the keyed values of a table
+-- Iterate over the keyed values of a table.
+-- Returns a stateful iterator function that returns one value.
 local function values(t)
   return iter_values(pairs(t))
 end
 exports.values = values
 
 -- Create a stateful iterator of `{k, v}` pairs from a table.
+-- Returns a stateful iterator function.
 local function items(t)
   local v
   local next, state, k = pairs(t)
@@ -41,8 +43,7 @@ local function items(t)
 end
 exports.items = items
 
--- from the end backwards
-
+-- Like `next()`, but works from right-to-left.
 local function prev(t, i)
   i = i - 1
   local v = t[i]
@@ -52,15 +53,21 @@ local function prev(t, i)
 end
 exports.prev = prev
 
--- Iterate over ipairs in reverse
--- Note this is a STATELESS iterator. Use rev_values if you want to iterate
+-- Iterate over ipairs in reverse.
+-- Note this is a STATELESS iterator. Use `rev_values` if you want to iterate
 -- over only values in reverse.
+--
+--     for i, v in rev_ipairs(t) do
+--       print(v)
+--     end
 local function rev_ipairs(t)
   return prev, t, #t + 1
 end
 exports.rev_ipairs = rev_ipairs
 
-local function rev_values(t)
+-- A stateful iterator for reversed indexed values of table.
+-- Returns a stateful iterator function.
+local function rev_ivalues(t)
   return iter_values(rev_ipairs(t))
 end
 exports.rev_values = rev_values
@@ -77,7 +84,7 @@ end
 exports.filter = filter
 
 -- Filter a stateful iterator function, removing items that pass the predicate
--- funcition. This function is the compliment of filter.
+-- function. This function is the compliment of filter.
 local function remove(predicate, next)
   return function()
     for v in next do
@@ -105,6 +112,11 @@ end
 exports.is_nil = is_nil
 
 -- Map all values with a2b. If mapped value is nil, filter value.
+-- This function serves a similar purpose to Python's list comprehensions
+-- and generator expressions. It lets you write your functions for single
+-- values, then have them deal with any iterator sequence, returning a new
+-- iterator sequence. Like Python's list comprehensions, you can both map
+-- and filter the values (to filter, simply return `nil`).
 local function filter_map(a2b, next)
   return function()
     for v in next do
@@ -118,11 +130,6 @@ end
 exports.filter_map = filter_map
 
 -- Lift a function to become a filter_map iterator transformer.
--- This function serves a similar purpose to Python's list comprehensions
--- and generator expressions. It lets you write your functions for single
--- values, then lift them to deal with any iterator sequence, returning a new
--- iterator sequence. Like Python's list comprehensions, you can both map
--- and filter the values (to filter, simply return `nil`).
 local function lift(a2b)
   return function(next)
     return filter_map(a2b, next)
@@ -130,6 +137,16 @@ local function lift(a2b)
 end
 exports.lift = lift
 
+-- Step through iterator with a reducing function and a starting `result value`.
+-- Returns an iterator for the result at each step of the reduction.
+--
+-- Example:
+--
+--     local v = values({1, 2, 3, 4})
+--     local function sum(x, y) return x + y end
+--     local r = reductions(sum, 0, v)
+--     print(collect(r))
+--     --- {1, 3, 6, 10}
 local function reductions(step, result, next)
   return function()
     for v in next do
@@ -192,14 +209,13 @@ local function skip_while(predicate, next)
   end
 end
 
-local function value(x, y)
-  if x and y then return y else return x end
-end
-
 -- Reduce over an iterator and produce a result.
-local function reduce(step, result, next, ...)
-  for i, v in next, ... do
-    result = step(result, value(i, v))
+local function reduce(step, result, next)
+  for v in next do
+    result = step(result, v)
+    if result == nil then
+      break
+    end
   end
   return result
 end
@@ -250,6 +266,10 @@ local function max(next, ...)
   return reduce(compare_max, nil, next, ...)
 end
 exports.max = max
+
+local function find(f, next, ...)
+
+end
 
 -- Partition an iterator into "chunks", returning an iterator of tables
 -- containing `chunk_size` items each.

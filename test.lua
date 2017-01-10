@@ -95,3 +95,11 @@ do
   test(max, 10, "max() finds the highest value in the iterator")
   test(nil_max, nil, "max() returns nil if iterator is empty")
 end
+
+do
+  local function sum(x, y) return x + y end
+  local rx = iter.reductions(sum, 0, iter.values(ten))
+  local tx = iter.collect(rx)
+  test(#tx, 10, "reductions() does correct number of steps")
+  test(tx[2], 3, "reductions() iterates through each step of reduction")
+end
