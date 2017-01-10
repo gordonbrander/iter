@@ -2,7 +2,7 @@
 
 Map, filter and transform lazy iterators.
 
-iter offers the familiar `map()`, `filter()`, etc but with a twist: rather than transforming tables, iter transforms the values in iterators. Transformations are lazy and no work is done until iterator is consumed (usually with a `for` loop).
+iter offers the familiar `map()`, `filter()`, etc but with a twist: rather than transforming tables, iter transforms the iterator. Transformations are lazy and no work is done until iterator is consumed (usually with a `for` loop). This is faster and more memory efficient, since items are transformed one-by-one as iterator is consumed and no interim tables are created.
 
 ## Example
 
