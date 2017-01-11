@@ -310,9 +310,16 @@ local function max(next, ...)
 end
 exports.max = max
 
-local function find(f, next, ...)
-
+-- Search through iterator `next`, and return the first value that passes
+-- the `predicate` function.
+local function find(predicate, next)
+  for v in next do
+    if predicate(v) then
+      return v
+    end
+  end
 end
+exports.find = find
 
 -- Partition an iterator into "chunks", returning an iterator of tables
 -- containing `chunk_size` items each.

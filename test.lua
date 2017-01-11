@@ -129,3 +129,13 @@ do
   local n = iter.sum(0, x)
   expect(n, 15, "num(n, iter) sums all the number values in the iterator with `n`")
 end
+
+do
+  local x = iter.ivalues({1, 2, 3, 4, 5})
+  local n = iter.find(function (x) return x == 3 end, x)
+  expect(n, 3, "find(f, iter) finds the first match")
+
+  local y = iter.ivalues({1, 2, 3, 4, 5})
+  local o = iter.find(function (x) return x == 10 end, x)
+  expect(o, nil, "find(f, iter) returns nil when nothing passes")
+end
