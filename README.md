@@ -31,6 +31,10 @@ for v in square_roots do
 end
 ```
 
+## Documentation
+
+[Documentation and annotated source](http://gordonbrander.github.io/iter/iter.html).
+
 ## Installation
 
 Using [Luarocks](https://luarocks.org):
