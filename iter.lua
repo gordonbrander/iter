@@ -1,33 +1,55 @@
 -- # iter.lua
 --
+-- Map, filter and transform lazy iterators.
+--
+-- iter offers the familiar `map()`, `filter()`, etc but with a twist: rather than transforming tables, iter transforms the iterator. Transformations are lazy and no work is done until iterator is consumed (usually with a `for` loop). This is faster and more memory efficient, since items are transformed one-by-one as iterator is consumed and no interim tables are created.
+--
 -- Transform iterator functions using familiar `map`, `filter`, `reduce`, etc.
 -- Transformations are lazy and are only performed item-by-item when the final
 -- iterator is consumed.
 
 local exports = {}
 
--- Capture the state of a stateless iterator and return a stateful iterator
--- of values.
-local function iter_values(next, state, i)
-  local i, v = i
-  return function()
-    i, v = next(state, i)
-    return v
-  end
+-- Create the metatable we use for iter_values below.
+local _iter_values_of = {}
+function _iter_values_of.__call(self)
+  local i, v = self.next(self.state, self.i)
+  self.i = i
+  return v
 end
-exports.iter_values = iter_values
+
+-- Capture the state of a stateless iterator and return a stateful iterator
+-- which will only return values. This is a lower-level function. You'll
+-- typically want to use `ivalues` or `values` instead.
+local function iter_values_of(next, state, i)
+  local iter = {next=next, state=state, i=i}
+  return setmetatable(iter, _iter_values_of)
+end
+exports.iter_values_of = iter_values_of
 
 -- Iterate over the indexed values of a table.
--- Returns a stateful iterator function that returns one values.
+-- Returns a stateful iterator that yields single values.
+--
+-- Example:
+--
+--     local t = {1, 2, 3}
+--     local x = ivalues(t)
+--     for v in x do print(v) end
 local function ivalues(t)
-  return iter_values(ipairs(t))
+  return iter_values_of(ipairs(t))
 end
 exports.ivalues = ivalues
 
 -- Iterate over the keyed values of a table.
 -- Returns a stateful iterator function that returns one value.
+--
+-- Example:
+--
+--     local t = {a=1, b=2, c=3}
+--     local x = ivalues(t)
+--     for v in x do print(v) end
 local function values(t)
-  return iter_values(pairs(t))
+  return iter_values_of(pairs(t))
 end
 exports.values = values
 
@@ -43,7 +65,8 @@ local function items(t)
 end
 exports.items = items
 
--- Like `next()`, but works from right-to-left.
+-- Like Lua's built-in `next()` function, but works backwards over indexes,
+-- from right-to-left.
 local function prev(t, i)
   if i then
     i = i - 1
@@ -68,14 +91,16 @@ end
 exports.rev_ipairs = rev_ipairs
 
 -- A stateful iterator for reversed indexed values of table.
--- Returns a stateful iterator function.
+-- Returns a stateful iterator.
 local function rev_ivalues(t)
-  return iter_values(rev_ipairs(t))
+  return iter_values_of(rev_ipairs(t))
 end
 exports.rev_ivalues = rev_ivalues
 
--- Filter a stateful `next` iterator function, returning a new `next` function
--- for the items that pass `predicate` function.
+-- Apply a filter function to all values of the iterator, returning a new
+-- iterator containing only the items that passed the test.
+-- `predicate` is a function that returns a boolean value. Anything it returns
+-- `true` for is kept.
 local function filter(predicate, next)
   return function()
     for v in next do
@@ -85,8 +110,8 @@ local function filter(predicate, next)
 end
 exports.filter = filter
 
--- Filter a stateful iterator function, removing items that pass the predicate
--- function. This function is the compliment of filter.
+-- Filter a stateful iterator function, returning an iterator containing only
+-- the items that *fail* the test. This function is the compliment of `filter`.
 local function remove(predicate, next)
   return function()
     for v in next do
@@ -97,44 +122,42 @@ end
 exports.remove = remove
 
 -- Map each item with function `a2b`, returning a new iterator of mapped values.
--- Note that because Lua iterators terminate on `nil`, you can stop iteration
--- early by returning `nil` from `a2b`.
+--
+-- Note that you may also use map to filter values, by returning `nil`.
+-- This is useful when adhering to Lua's convention of returning `nil` for
+-- function exceptions. Failures are automatically filtered out.
+--
+-- This function can be used to serve a similar purpose to Python's list
+-- comprehensions and generator expressions. It lets you write your functions
+-- for single values, then have them deal with any iterator sequence,
+-- returning a new iterator sequence. Like Python's list comprehensions, you
+-- can both map and filter the values (to filter, simply return `nil`).
 local function map(a2b, next)
   return function()
     for v in next do
-      return a2b(v)
-    end
-  end
-end
-exports.map = map
-
-local function is_nil(x)
-  return x ~= nil
-end
-exports.is_nil = is_nil
-
--- Map all values with a2b. If mapped value is nil, filter value.
--- This function serves a similar purpose to Python's list comprehensions
--- and generator expressions. It lets you write your functions for single
--- values, then have them deal with any iterator sequence, returning a new
--- iterator sequence. Like Python's list comprehensions, you can both map
--- and filter the values (to filter, simply return `nil`).
-local function filter_map(a2b, next)
-  return function()
-    for v in next do
       local xv = a2b(v)
+      -- Skip `nil` values, since `nil` terminates iteration in Lua.
       if xv ~= nil then
         return xv
       end
     end
   end
 end
-exports.filter_map = filter_map
+exports.map = map
 
--- Lift a function to become a filter_map iterator transformer.
+-- Lift a function to become an iterator transformer.
+-- Returns a new function that will consume an iterator and return a new
+-- iterator, transformed with function `a2b`. Example:
+--
+--     function square(x) return x * x end
+--     local squares = lift(square)
+--     local t = {1, 2, 3}
+--     local x = iter.ivalues(t)
+--     local y = squares(x)
+--     -- <1, 4, 9>
 local function lift(a2b)
-  return function(next)
-    return filter_map(a2b, next)
+  return function(x)
+    return map(a2b, x)
   end
 end
 exports.lift = lift
@@ -144,9 +167,9 @@ exports.lift = lift
 --
 -- Example:
 --
---     local v = values({1, 2, 3, 4})
+--     local v = iter.values({1, 2, 3, 4})
 --     local function sum(x, y) return x + y end
---     local r = reductions(sum, 0, v)
+--     local r = iter.reductions(sum, 0, v)
 --     print(collect(r))
 --     --- {1, 3, 6, 10}
 local function reductions(step, result, next)
@@ -223,10 +246,28 @@ local function reduce(step, result, next)
 end
 exports.reduce = reduce
 
+local function add(a, b)
+  return a + b
+end
+exports.add = add
+
+-- Sum over all of the values of iterator `next`, starting with number `start`.
+-- Example:
+--
+--     local t = {1, 2, 3}
+--     local x = iter.ivalues(t)
+--     local n = iter.sum(10, x)
+--     -- 16
+local function sum(start, next)
+  return reduce(add, start, next)
+end
+exports.sum = sum
+
 local function append(t, v)
   table.insert(t, v)
   return t
 end
+exports.append = append
 
 -- Insert values from iterator into table `t`.
 -- Mutates and returns `t`.

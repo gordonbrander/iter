@@ -37,14 +37,14 @@ end
 
 do
   local x = iter.values(ten)
-  x = iter.filter_map(function (y)
+  x = iter.map(function (y)
     if y % 2 > 0 then
       return "mapped_" .. y
     end
   end, x)
   local t = iter.collect(x)
-  expect(t[1], "mapped_1", "filter_map maps values")
-  expect(#t, 5, "filter_map filters out nil values")
+  expect(t[1], "mapped_1", "map(f, iter) maps values")
+  expect(#t, 5, "map(f, iter) filters out nil values")
 end
 
 do
@@ -122,4 +122,10 @@ do
   expect(type(t[1]), 'table', "zip(a, b) creates an iterator of tables")
   expect(t[1][1], 1, "zip(a, b) puts a[n] on the left of each pair")
   expect(t[1][2], 10, "zip(a, b) puts b[n] on the right of each pair")
+end
+
+do
+  local x = iter.ivalues({1, 2, 3, 4, 5})
+  local n = iter.sum(0, x)
+  expect(n, 15, "num(n, iter) sums all the number values in the iterator with `n`")
 end
