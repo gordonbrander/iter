@@ -297,8 +297,16 @@ local function partition(chunk_size, next)
 end
 exports.partition = partition
 
--- Zip 2 iterators using function f
+-- Zip 2 iterators using function `f`.
+-- Each step, takes one item from the left and on item from the right iterator,
+-- and passes these items to function `f`. The return value of `f` becomes the
+-- value at that step of the returned iterator.
 -- Terminates on shortest iterator.
+--
+-- Example:
+--
+--     zip_with(table2, iter_1, iter_2)
+--     -- <{1, 2}, {3, 4}, {5, 6}, ...>
 local function zip_with(f, next_a, next_b)
   return function()
     a = next_a()
@@ -310,6 +318,7 @@ local function zip_with(f, next_a, next_b)
 end
 exports.zip_with = zip_with
 
+-- Pack 2 arguments into a table.
 local function table2(a, b)
   return {a, b}
 end
