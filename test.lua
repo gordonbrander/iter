@@ -7,7 +7,7 @@ local MSG_TEMPLATE = [[Test failed:
 Expected: %s
 Got: %s]]
 
-local function test(x, y, msg)
+local function expect(x, y, msg)
   assert(x == y, string.format(MSG_TEMPLATE, msg or "", y, x))
   print(msg)
 end
@@ -22,8 +22,8 @@ do
   local odd = iter.filter(function (x)
     return x % 2 == 1
   end, values)
-  test(odd(), 1, "filter() filters false values")
-  test(odd(), 3, "filter() filters false values")
+  expect(odd(), 1, "filter(f, iter) filters false values")
+  expect(odd(), 3, "filter(f, iter) filters false values")
 end
 
 do
@@ -31,8 +31,8 @@ do
   local odd = iter.remove(function (x)
     return x % 2 == 1
   end, values)
-  test(odd(), 2, "remove() rejects true values")
-  test(odd(), 4, "remove() rejects true values")
+  expect(odd(), 2, "remove(f, iter) rejects true values")
+  expect(odd(), 4, "remove(f, iter) rejects true values")
 end
 
 do
@@ -43,8 +43,8 @@ do
     end
   end, x)
   local t = iter.collect(x)
-  test(t[1], "mapped_1", "filter_map maps values")
-  test(#t, 5, "filter_map filters out nil values")
+  expect(t[1], "mapped_1", "filter_map maps values")
+  expect(#t, 5, "filter_map filters out nil values")
 end
 
 do
@@ -57,49 +57,59 @@ do
   local map_filter_odd = iter.lift(update_odd)
   x = map_filter_odd(x)
   local t = iter.collect(x)
-  test(type(map_filter_odd), 'function', 'lift() lifts a function into an iter function')
-  test(#t, 5, "lifted function filter_maps values")
+  expect(type(map_filter_odd), 'function', 'lift(f) lifts a function into an iter function')
+  expect(#t, 5, "lifted function filter_maps values")
 end
 
 do
   local x = iter.values(ten)
   local y = iter.take(3, x)
   local t = iter.collect(y)
-  test(#t, 3, "take() takes correct number of values")
+  expect(#t, 3, "take(n, iter) takes correct number of values")
 end
 
 do
   local x = iter.values(ten)
   local y = iter.skip(3, x)
   local t = iter.collect(y)
-  test(#t, 7, "skip() skips corrrect number of values")
+  expect(#t, 7, "skip(n, iter) skips corrrect number of values")
 end
 
 do
   local x = iter.values(ten)
   local y = {}
   iter.extend(y, x)
-  test(#y, 10, "extend() appends indexed values to table, mutating it")
+  expect(#y, 10, "extend(t, iter) appends indexed values to table, mutating it")
 end
 
 do
   local min = iter.min(iter.values(ten))
   local nil_min = iter.min(iter.values({}))
-  test(min, 1, "min() finds the lowest value in the iterator")
-  test(nil_min, nil, "min() returns nil if iterator is empty")
+  expect(min, 1, "min(iter) finds the lowest value in the iterator")
+  expect(nil_min, nil, "min(iter) returns nil if iterator is empty")
 end
 
 do
   local max = iter.max(iter.values(ten))
   local nil_max = iter.max(iter.values({}))
-  test(max, 10, "max() finds the highest value in the iterator")
-  test(nil_max, nil, "max() returns nil if iterator is empty")
+  expect(max, 10, "max(iter) finds the highest value in the iterator")
+  expect(nil_max, nil, "max(iter) returns nil if iterator is empty")
 end
 
 do
   local function sum(x, y) return x + y end
   local rx = iter.reductions(sum, 0, iter.values(ten))
   local tx = iter.collect(rx)
-  test(#tx, 10, "reductions() does correct number of steps")
-  test(tx[2], 3, "reductions() iterates through each step of reduction")
+  expect(#tx, 10, "reductions(step, x, iter) does correct number of steps")
+  expect(tx[2], 3, "reductions(step, x, iter) iterates through each step of reduction")
+end
+
+do
+  expect(iter.prev(ten, #ten + 1), 10, "prev(t, i) steps over values in reverse")
+end
+
+do
+  local rev = iter.rev_ivalues(ten)
+  local t = iter.collect(rev)
+  expect(t[1], 10, "rev_ivalues(t) iterates over values in reverse")
 end

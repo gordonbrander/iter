@@ -45,10 +45,12 @@ exports.items = items
 
 -- Like `next()`, but works from right-to-left.
 local function prev(t, i)
-  i = i - 1
-  local v = t[i]
-  if v then
-    return i, v
+  if i then
+    i = i - 1
+    local v = t[i]
+    if v then
+      return i, v
+    end
   end
 end
 exports.prev = prev
@@ -61,7 +63,7 @@ exports.prev = prev
 --       print(v)
 --     end
 local function rev_ipairs(t)
-  return prev, t, #t + 1
+  return prev, t, (#t + 1)
 end
 exports.rev_ipairs = rev_ipairs
 
@@ -70,7 +72,7 @@ exports.rev_ipairs = rev_ipairs
 local function rev_ivalues(t)
   return iter_values(rev_ipairs(t))
 end
-exports.rev_values = rev_values
+exports.rev_ivalues = rev_ivalues
 
 -- Filter a stateful `next` iterator function, returning a new `next` function
 -- for the items that pass `predicate` function.
