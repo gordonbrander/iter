@@ -10,7 +10,11 @@
 
 local exports = {}
 
--- Create the metatable we use for iter_values below.
+-- ## Create Iterators
+--
+-- These functions help you create iterators from tables.
+
+-- Create the metatable we use for `iter_values` below.
 local _iter_values_of = {}
 function _iter_values_of.__call(self)
   local i, v = self.next(self.state, self.i)
@@ -97,6 +101,10 @@ local function rev_ivalues(t)
 end
 exports.rev_ivalues = rev_ivalues
 
+-- ## Transform iterators
+--
+-- These functions will allow you to transform iterators.
+
 -- Apply a filter function to all values of the iterator, returning a new
 -- iterator containing only the items that passed the test.
 -- `predicate` is a function that returns a boolean value. Anything it returns
@@ -182,6 +190,8 @@ local function reductions(step, result, next)
 end
 exports.reductions = reductions
 
+-- Take the first `n` items of iterator.
+-- Returns a new iterator that will terminate after yielding `n` items.
 local function take(n, next)
   return function()
     for v in next do
@@ -196,6 +206,8 @@ local function take(n, next)
 end
 exports.take = take
 
+-- Take items from iterator while `predicate` function returns `true`.
+-- As soon as function returns `false`, stop iteration.
 local function take_while(predicate, next)
   return function()
     for v in next do
@@ -209,6 +221,8 @@ local function take_while(predicate, next)
 end
 exports.map = map
 
+-- Skip the first `n` items of iterator.
+-- Returns a new iterator that will yield items after skipping `n` items.
 local function skip(n, next)
   return function()
     for v in next do
@@ -221,6 +235,8 @@ local function skip(n, next)
 end
 exports.skip = skip
 
+-- Skip items until `predicate` function returns true.
+-- Returns a new iterator with items after `predicate` returns true.
 local function skip_while(predicate, next)
   local skipping = true
   return function()
@@ -234,96 +250,9 @@ local function skip_while(predicate, next)
   end
 end
 
--- Reduce over an iterator and produce a result.
-local function reduce(step, result, next)
-  for v in next do
-    result = step(result, v)
-    if result == nil then
-      break
-    end
-  end
-  return result
-end
-exports.reduce = reduce
-
-local function add(a, b)
-  return a + b
-end
-exports.add = add
-
--- Sum over all of the values of iterator `next`, starting with number `start`.
--- Example:
---
---     local t = {1, 2, 3}
---     local x = iter.ivalues(t)
---     local n = iter.sum(10, x)
---     -- 16
-local function sum(start, next)
-  return reduce(add, start, next)
-end
-exports.sum = sum
-
-local function append(t, v)
-  table.insert(t, v)
-  return t
-end
-exports.append = append
-
--- Insert values from iterator into table `t`.
--- Mutates and returns `t`.
-local function extend(t, next, ...)
-  return reduce(append, t, next, ...)
-end
-exports.extend = extend
-
--- Collect an iterator's values into a table.
-local function collect(next, ...)
-  return extend({}, next, ...)
-end
-exports.collect = collect
-
-local function compare_min(x, y)
-  if x and x < y then
-    return x
-  else
-    return y
-  end
-end
-
--- Get the smallest item in the iterator
-local function min(next, ...)
-  return reduce(compare_min, nil, next, ...)
-end
-exports.min = min
-
-local function compare_max(x, y)
-  if x and x > y then
-    return x
-  else
-    return y
-  end
-end
-
--- Get the largest item in the iterator
-local function max(next, ...)
-  return reduce(compare_max, nil, next, ...)
-end
-exports.max = max
-
--- Search through iterator `next`, and return the first value that passes
--- the `predicate` function.
-local function find(predicate, next)
-  for v in next do
-    if predicate(v) then
-      return v
-    end
-  end
-end
-exports.find = find
-
 -- Partition an iterator into "chunks", returning an iterator of tables
 -- containing `chunk_size` items each.
--- Returns a new iterator of chunks
+-- Returns a new iterator of chunks.
 local function partition(chunk_size, next)
   return function()
     local chunk = {}
@@ -391,13 +320,14 @@ local function dedupe(next)
 end
 exports.dedupe = dedupe
 
--- Remove adjacent duplicates from iterator by calculating value with
--- readkey function.
-local function dedupe_with(readkey, next)
+-- Remove adjacent duplicates from iterator. Values are compared with `compare`
+-- function. Function gets previous and current value. If it returns true, the
+-- pair is not considered to be a duplicate.
+local function dedupe_with(compare, next)
   local prev = dedupe
   return function()
     for curr in next do
-      if readkey(curr) ~= readkey(prev) then
+      if compare(prev, curr) then
         prev = curr
         return curr
       end
@@ -405,5 +335,103 @@ local function dedupe_with(readkey, next)
   end
 end
 exports.dedupe_with = dedupe_with
+
+-- ## Reduce Iterators
+--
+-- These functions let you consume iterators, and transform them into a value.
+
+-- Reduce over an iterator and produce a result.
+local function reduce(step, result, next)
+  for v in next do
+    result = step(result, v)
+    if result == nil then
+      break
+    end
+  end
+  return result
+end
+exports.reduce = reduce
+
+local function add(a, b)
+  return a + b
+end
+exports.add = add
+
+-- Sum over all of the values of iterator `next`, starting with number `start`.
+-- Example:
+--
+--     local t = {1, 2, 3}
+--     local x = iter.ivalues(t)
+--     local n = iter.sum(10, x)
+--     -- 16
+local function sum(start, next)
+  return reduce(add, start, next)
+end
+exports.sum = sum
+
+local function append(t, v)
+  table.insert(t, v)
+  return t
+end
+exports.append = append
+
+-- Insert values from iterator into table `t`.
+-- Mutates and returns `t`.
+local function extend(t, next)
+  return reduce(append, t, next)
+end
+exports.extend = extend
+
+-- Collect an iterator's values into a table.
+-- Typical iterator workflow is to transform iterators, then collect the result.
+-- Example:
+--
+--     local x = iter.ivalues({1, 2, 3, 4, 5})
+--     local chunks = partition(3, x)
+--     local t = collect(chunks)
+--     print(t) -- {{1, 2, 3}, {4, 5}}
+local function collect(next)
+  return extend({}, next)
+end
+exports.collect = collect
+
+local function compare_min(x, y)
+  if x and x < y then
+    return x
+  else
+    return y
+  end
+end
+
+-- Get the smallest number in the iterator.
+local function min(next, ...)
+  return reduce(compare_min, nil, next, ...)
+end
+exports.min = min
+
+local function compare_max(x, y)
+  if x and x > y then
+    return x
+  else
+    return y
+  end
+end
+
+-- Get the largest number in the iterator.
+local function max(next, ...)
+  return reduce(compare_max, nil, next, ...)
+end
+exports.max = max
+
+-- Search through iterator `next`, and return the first value that passes
+-- the `predicate` function.
+local function find(predicate, next)
+  for v in next do
+    if predicate(v) then
+      return v
+    end
+  end
+end
+exports.find = find
 
 return exports
