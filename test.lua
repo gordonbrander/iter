@@ -113,3 +113,13 @@ do
   local t = iter.collect(rev)
   expect(t[1], 10, "rev_ivalues(t) iterates over values in reverse")
 end
+
+do
+  local x = iter.ivalues(ten)
+  local y = iter.rev_ivalues(ten)
+  local zipped = iter.zip(x, y)
+  local t = iter.collect(zipped)
+  expect(type(t[1]), 'table', "zip(a, b) creates an iterator of tables")
+  expect(t[1][1], 1, "zip(a, b) puts a[n] on the left of each pair")
+  expect(t[1][2], 10, "zip(a, b) puts b[n] on the right of each pair")
+end
