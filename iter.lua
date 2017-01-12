@@ -310,20 +310,6 @@ local function zip(next_a, next_b)
 end
 exports.zip = zip
 
--- Remove adjacent duplicates from iterator.
-local function dedupe(next)
-  local prev = dedupe
-  return function()
-    for curr in next do
-      if curr ~= prev then
-        prev = curr
-        return curr
-      end
-    end
-  end
-end
-exports.dedupe = dedupe
-
 -- Remove adjacent duplicates from iterator. Values are compared with `compare`
 -- function. Function gets previous and current value. If it returns true, the
 -- pair is not considered to be a duplicate.
@@ -339,6 +325,16 @@ local function dedupe_with(compare, next)
   end
 end
 exports.dedupe_with = dedupe_with
+
+local function different(x, y)
+  return x ~= y
+end
+
+-- Remove adjacent duplicates from iterator.
+local function dedupe(next)
+  return dedupe_with(different, next)
+end
+exports.dedupe = dedupe
 
 -- ## Reduce Iterators
 --
