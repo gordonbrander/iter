@@ -70,6 +70,13 @@ end
 
 do
   local x = iter.values(ten)
+  local y = iter.take_while(function(x) return x < 4 end, x)
+  local t = iter.collect(y)
+  expect(#t, 3, "take_while(f, iter) takes correct number of values")
+end
+
+do
+  local x = iter.values(ten)
   local y = iter.skip(3, x)
   local t = iter.collect(y)
   expect(#t, 7, "skip(n, iter) skips corrrect number of values")

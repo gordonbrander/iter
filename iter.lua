@@ -212,14 +212,14 @@ local function take_while(predicate, next)
   return function()
     for v in next do
       if predicate(v) then
-        return a2b(v)
+        return v
       else
         return nil
       end
     end
   end
 end
-exports.map = map
+exports.take_while = take_while
 
 -- Skip the first `n` items of iterator.
 -- Returns a new iterator that will yield items after skipping `n` items.
