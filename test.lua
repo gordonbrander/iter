@@ -162,3 +162,13 @@ do
   expect(#y[1], 3, "partition(n, iter) creates correct chunk sizes")
   expect(#y[4], 1, "partition(n, iter) appends leftovers to last chunk")
 end
+
+do
+  local x = iter.ivalues({1, 2, 2, 2, 3, 3, 4, 4, 4, 4, 4, 3, 3})
+  local chunks = iter.dedupe(x)
+  local y = iter.collect(chunks)
+  expect(#y, 5, "dedupe(iter) compacts iter to adjacent unique")
+  expect(y[3], 3, "dedupe(iter) dedupes correctly")
+  expect(y[4], 4, "dedupe(iter) dedupes correctly")
+  expect(y[5], 3, "dedupe(iter) only dedupes adjacent")
+end
