@@ -17,16 +17,22 @@ local exports = {}
 -- Create the metatable we use for `iter_values` below.
 local _iter_values_of = {}
 function _iter_values_of.__call(self)
-  local i, v = self.next(self.state, self.i)
-  self.i = i
-  return v
+  if not self.is_exhausted then
+    local i, v = self.next(self.state, self.i)
+    if not i then
+      self.is_exhausted = true
+    else
+      self.i = i
+      return v
+    end
+  end
 end
 
 -- Capture the state of a stateless iterator and return a stateful iterator
 -- which will only return values. This is a lower-level function. You'll
 -- typically want to use `ivalues` or `values` instead.
 local function iter_values_of(next, state, i)
-  local iter = {next=next, state=state, i=i}
+  local iter = {next=next, state=state, i=i, is_exhausted=false}
   return setmetatable(iter, _iter_values_of)
 end
 exports.iter_values_of = iter_values_of
@@ -257,19 +263,16 @@ exports.skip_while = skip_while
 local function partition(chunk_size, next)
   return function()
     local chunk = {}
-
     for v in next do
       table.insert(chunk, v)
       if #chunk == chunk_size then
         return chunk
       end
     end
-
     -- If we have any values in the last chunk, return it.
     if #chunk > 0 then
       return chunk
     end
-
     -- Otherwise, return nothing
   end
 end

@@ -14,7 +14,7 @@ end
 
 do
   local values = iter.values(ten)
-  assert(values() == 1, "values iterates over values")
+  expect(values(), 1, "values iterates over values")
 end
 
 do
@@ -152,4 +152,13 @@ do
   local y = iter.ivalues({1, 2, 3, 4, 5})
   local o = iter.find(function (x) return x == 10 end, x)
   expect(o, nil, "find(f, iter) returns nil when nothing passes")
+end
+
+do
+  local x = iter.ivalues(ten)
+  local chunks = iter.partition(3, x)
+  local y = iter.collect(chunks)
+  expect(#y, 4, "partition(n, iter) creates correct number of chunks")
+  expect(#y[1], 3, "partition(n, iter) creates correct chunk sizes")
+  expect(#y[4], 1, "partition(n, iter) appends leftovers to last chunk")
 end
