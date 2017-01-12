@@ -62,9 +62,15 @@ iterator is consumed.</p>
             
             <div class="content"><div class='highlight'><pre><span class="hljs-keyword">local</span> _iter_values_of = {}
 <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">_iter_values_of.__call</span><span class="hljs-params">(self)</span></span>
-  <span class="hljs-keyword">local</span> i, v = self.<span class="hljs-built_in">next</span>(self.state, self.i)
-  self.i = i
-  <span class="hljs-keyword">return</span> v
+  <span class="hljs-keyword">if</span> <span class="hljs-keyword">not</span> self.is_exhausted <span class="hljs-keyword">then</span>
+    <span class="hljs-keyword">local</span> i, v = self.<span class="hljs-built_in">next</span>(self.state, self.i)
+    <span class="hljs-keyword">if</span> <span class="hljs-keyword">not</span> i <span class="hljs-keyword">then</span>
+      self.is_exhausted = <span class="hljs-keyword">true</span>
+    <span class="hljs-keyword">else</span>
+      self.i = i
+      <span class="hljs-keyword">return</span> v
+    <span class="hljs-keyword">end</span>
+  <span class="hljs-keyword">end</span>
 <span class="hljs-keyword">end</span></pre></div></div>
             
         </li>
@@ -83,7 +89,7 @@ typically want to use <code>ivalues</code> or <code>values</code> instead.</p>
             </div>
             
             <div class="content"><div class='highlight'><pre><span class="hljs-keyword">local</span> <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">iter_values_of</span><span class="hljs-params">(next, state, i)</span></span>
-  <span class="hljs-keyword">local</span> iter = {<span class="hljs-built_in">next</span>=<span class="hljs-built_in">next</span>, state=state, i=i}
+  <span class="hljs-keyword">local</span> iter = {<span class="hljs-built_in">next</span>=<span class="hljs-built_in">next</span>, state=state, i=i, is_exhausted=<span class="hljs-keyword">false</span>}
   <span class="hljs-keyword">return</span> <span class="hljs-built_in">setmetatable</span>(iter, _iter_values_of)
 <span class="hljs-keyword">end</span>
 exports.iter_values_of = iter_values_of</pre></div></div>
@@ -438,14 +444,14 @@ As soon as function returns <code>false</code>, stop iteration.</p>
   <span class="hljs-keyword">return</span> <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">()</span></span>
     <span class="hljs-keyword">for</span> v <span class="hljs-keyword">in</span> <span class="hljs-built_in">next</span> <span class="hljs-keyword">do</span>
       <span class="hljs-keyword">if</span> predicate(v) <span class="hljs-keyword">then</span>
-        <span class="hljs-keyword">return</span> a2b(v)
+        <span class="hljs-keyword">return</span> v
       <span class="hljs-keyword">else</span>
         <span class="hljs-keyword">return</span> <span class="hljs-keyword">nil</span>
       <span class="hljs-keyword">end</span>
     <span class="hljs-keyword">end</span>
   <span class="hljs-keyword">end</span>
 <span class="hljs-keyword">end</span>
-exports.map = map</pre></div></div>
+exports.take_while = take_while</pre></div></div>
             
         </li>
         
@@ -498,7 +504,8 @@ Returns a new iterator with items after <code>predicate</code> returns true.</p>
       <span class="hljs-keyword">end</span>
     <span class="hljs-keyword">end</span>
   <span class="hljs-keyword">end</span>
-<span class="hljs-keyword">end</span></pre></div></div>
+<span class="hljs-keyword">end</span>
+exports.skip_while = skip_while</pre></div></div>
             
         </li>
         
@@ -518,7 +525,6 @@ Returns a new iterator of chunks.</p>
             <div class="content"><div class='highlight'><pre><span class="hljs-keyword">local</span> <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">partition</span><span class="hljs-params">(chunk_size, next)</span></span>
   <span class="hljs-keyword">return</span> <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">()</span></span>
     <span class="hljs-keyword">local</span> chunk = {}
-
     <span class="hljs-keyword">for</span> v <span class="hljs-keyword">in</span> <span class="hljs-built_in">next</span> <span class="hljs-keyword">do</span>
       <span class="hljs-built_in">table</span>.insert(chunk, v)
       <span class="hljs-keyword">if</span> #chunk == chunk_size <span class="hljs-keyword">then</span>
@@ -635,32 +641,6 @@ exports.zip = zip</pre></div></div>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-28">&#182;</a>
               </div>
-              <p>Remove adjacent duplicates from iterator.</p>
-
-            </div>
-            
-            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">local</span> <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">dedupe</span><span class="hljs-params">(next)</span></span>
-  <span class="hljs-keyword">local</span> prev = dedupe
-  <span class="hljs-keyword">return</span> <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">()</span></span>
-    <span class="hljs-keyword">for</span> curr <span class="hljs-keyword">in</span> <span class="hljs-built_in">next</span> <span class="hljs-keyword">do</span>
-      <span class="hljs-keyword">if</span> curr ~= prev <span class="hljs-keyword">then</span>
-        prev = curr
-        <span class="hljs-keyword">return</span> curr
-      <span class="hljs-keyword">end</span>
-    <span class="hljs-keyword">end</span>
-  <span class="hljs-keyword">end</span>
-<span class="hljs-keyword">end</span>
-exports.dedupe = dedupe</pre></div></div>
-            
-        </li>
-        
-        
-        <li id="section-29">
-            <div class="annotation">
-              
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-29">&#182;</a>
-              </div>
               <p>Remove adjacent duplicates from iterator. Values are compared with <code>compare</code>
 function. Function gets previous and current value. If it returns true, the
 pair is not considered to be a duplicate.</p>
@@ -678,7 +658,29 @@ pair is not considered to be a duplicate.</p>
     <span class="hljs-keyword">end</span>
   <span class="hljs-keyword">end</span>
 <span class="hljs-keyword">end</span>
-exports.dedupe_with = dedupe_with</pre></div></div>
+exports.dedupe_with = dedupe_with
+
+<span class="hljs-keyword">local</span> <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">different</span><span class="hljs-params">(x, y)</span></span>
+  <span class="hljs-keyword">return</span> x ~= y
+<span class="hljs-keyword">end</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-29">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-29">&#182;</a>
+              </div>
+              <p>Remove adjacent duplicates from iterator.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">local</span> <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">dedupe</span><span class="hljs-params">(next)</span></span>
+  <span class="hljs-keyword">return</span> dedupe_with(different, <span class="hljs-built_in">next</span>)
+<span class="hljs-keyword">end</span>
+exports.dedupe = dedupe</pre></div></div>
             
         </li>
         
