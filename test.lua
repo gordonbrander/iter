@@ -84,6 +84,13 @@ end
 
 do
   local x = iter.values(ten)
+  local y = iter.skip_while(function(x) return x < 4 end, x)
+  local t = iter.collect(y)
+  expect(#t, 6, "skip_while(f, iter) skips correct number of values")
+end
+
+do
+  local x = iter.values(ten)
   local y = {}
   iter.extend(y, x)
   expect(#y, 10, "extend(t, iter) appends indexed values to table, mutating it")

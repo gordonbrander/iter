@@ -249,6 +249,7 @@ local function skip_while(predicate, next)
     end
   end
 end
+exports.skip_while = skip_while
 
 -- Partition an iterator into "chunks", returning an iterator of tables
 -- containing `chunk_size` items each.
