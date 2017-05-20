@@ -8,6 +8,11 @@
 -- Transformations are lazy and are only performed item-by-item when the final
 -- iterator is consumed.
 
+local insert = table.insert
+local ipairs = ipairs
+local pairs = pairs
+local setmetatable = setmetatable
+
 local exports = {}
 
 -- ## Create Iterators
@@ -264,7 +269,7 @@ local function partition(chunk_size, next)
   return function()
     local chunk = {}
     for v in next do
-      table.insert(chunk, v)
+      insert(chunk, v)
       if #chunk == chunk_size then
         return chunk
       end
@@ -370,7 +375,7 @@ end
 exports.sum = sum
 
 local function append(t, v)
-  table.insert(t, v)
+  insert(t, v)
   return t
 end
 exports.append = append
