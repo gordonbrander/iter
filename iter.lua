@@ -268,14 +268,16 @@ exports.skip_while = skip_while
 local function partition(chunk_size, next)
   return function()
     local chunk = {}
+    local i = 0
     for v in next do
       insert(chunk, v)
-      if #chunk == chunk_size then
+      i = i + 1
+      if i == chunk_size then
         return chunk
       end
     end
     -- If we have any values in the last chunk, return it.
-    if #chunk > 0 then
+    if i > 0 then
       return chunk
     end
     -- Otherwise, return nothing
