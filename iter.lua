@@ -385,7 +385,10 @@ exports.append = append
 -- Insert values from iterator into table `t`.
 -- Mutates and returns `t`.
 local function extend(t, next)
-  return reduce(append, t, next)
+  for v in next do
+    insert(t, v)
+  end
+  return t
 end
 exports.extend = extend
 
