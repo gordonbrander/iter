@@ -8,7 +8,7 @@ Expected: %s
 Got: %s]]
 
 local function expect(x, y, msg)
-  assert(x == y, string.format(MSG_TEMPLATE, msg or "", y, x))
+  assert(x == y, string.format(MSG_TEMPLATE, msg or "", y or "", x or ""))
   print(msg)
 end
 
