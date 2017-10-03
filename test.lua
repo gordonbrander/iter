@@ -172,3 +172,9 @@ do
   expect(y[4], 4, "dedupe(iter) dedupes correctly")
   expect(y[5], 3, "dedupe(iter) only dedupes adjacent")
 end
+
+do
+  local x = iter.ivalues({1, 2, 3, 4, 5})
+  local n = iter.count(x)
+  expect(n, 5, "count(iter) counts the number of values")
+end
