@@ -434,4 +434,21 @@ local function find(predicate, next)
 end
 exports.find = find
 
+local function increment(number)
+  return number + 1
+end
+
+-- Count the number of values in the iterator.
+--
+-- Example:
+--
+--     local t = {1, 2, 3}
+--     local x = iter.ivalues(t)
+--     local n = iter.count(x)
+--     -- 3
+local function count(next)
+  return reduce(increment, 0, next)
+end
+exports.count = count
+
 return exports
